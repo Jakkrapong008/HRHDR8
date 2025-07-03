@@ -1,0 +1,525 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรายงานยอดเงินบริจาค - โรงเรียนหางดงรัฐราษฎร์อุปถัมภ์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Sarabun', sans-serif;
+        }
+        
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        .bounce-in {
+            animation: bounceIn 1.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #fef2f2 0%, #fce7e7 50%, #fecaca 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.1);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ef4444;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .scrollable-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .scrollable-table::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollable-table::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .scrollable-table::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 10px;
+        }
+        
+        .hover-scale {
+            transition: transform 0.3s ease;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg fade-in">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="https://img2.pic.in.th/pic/logo-HDR.md.png" alt="โลโก้โรงเรียน" class="h-16 w-auto bounce-in">
+                    <div class="slide-up">
+                        <h1 class="text-2xl md:text-3xl font-bold text-red-600">
+                            💰 ยอดเงินบริจาคเนื่องในวันคล้ายวันสถาปนา ครบรอบ 49 ปี 🎉
+                        </h1>
+                        <p class="text-lg text-gray-600 mt-1">🏫 โรงเรียนหางดงรัฐราษฎร์อุปถัมภ์</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center py-8">
+        <div class="loading mx-auto"></div>
+        <p class="mt-4 text-gray-600">🔄 กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8" id="mainContent" style="display: none;">
+        
+        <!-- Total Donation Amount -->
+        <section class="mb-8 slide-up">
+            <div class="bg-white rounded-xl p-8 card-shadow hover-scale">
+                <h2 class="text-3xl font-bold text-center text-red-600 mb-4">💎 ยอดเงินบริจาครวม</h2>
+                <div class="text-center">
+                    <span id="totalAmount" class="text-5xl font-bold text-red-500">0</span>
+                    <span class="text-2xl text-gray-600 ml-2">บาท</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            
+            <!-- Donation by Channel -->
+            <section class="slide-up">
+                <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+                    <h3 class="text-xl font-bold text-red-600 mb-4">📊 ยอดเงินบริจาคแยกตามประเภท</h3>
+                    <div class="mb-4">
+                        <canvas id="channelChart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-red-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-red-600">ช่องทาง</th>
+                                    <th class="px-4 py-2 text-right text-red-600">ยอดเงิน (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="channelTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Donation by Status -->
+            <section class="slide-up">
+                <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+                    <h3 class="text-xl font-bold text-red-600 mb-4">📈 ยอดเงินบริจาคแยกตามสถานะ</h3>
+                    <div class="mb-4">
+                        <canvas id="statusChart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-red-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-red-600">สถานะ</th>
+                                    <th class="px-4 py-2 text-right text-red-600">ยอดเงิน (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statusTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Daily Donations Chart -->
+        <section class="mb-8 slide-up">
+            <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+                <h3 class="text-xl font-bold text-red-600 mb-4">📅 ยอดเงินบริจาคแยกตามวันที่</h3>
+                <div class="mb-4">
+                    <canvas id="dailyChart" width="800" height="400"></canvas>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-red-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-red-600">วันที่</th>
+                                <th class="px-4 py-2 text-right text-red-600">ยอดเงิน (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Donor List -->
+        <section class="mb-8 slide-up">
+            <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+                <h3 class="text-xl font-bold text-red-600 mb-4">👥 รายนามผู้บริจาคเงิน</h3>
+                
+                <!-- Search Box -->
+                <div class="mb-4">
+                    <input type="text" id="searchInput" placeholder="🔍 ค้นหาชื่อผู้บริจาค..." 
+                           class="w-full px-4 py-2 border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400">
+                </div>
+                
+                <!-- Donor Table -->
+                <div class="scrollable-table border border-red-200 rounded-lg">
+                    <table class="w-full text-sm">
+                        <thead class="bg-red-50 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-red-600">รายชื่อผู้บริจาค</th>
+                                <th class="px-4 py-3 text-right text-red-600">ยอดเงิน (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donorTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Instructions -->
+        <section class="mb-8 slide-up">
+            <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+                <h3 class="text-xl font-bold text-red-600 mb-4">📋 คำชี้แจง</h3>
+                <div class="space-y-4 text-gray-700">
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <p class="font-semibold text-red-600">🏦 กรณีที่ 1</p>
+                        <p>การบริจาคเงินผ่านธนาคารกรุงไทย เลขบัญชี 538-1-13130-5 (ทุนการศึกษา)</p>
+                        <p>ท่านสามารถตรวจสอบเงินบริจาค ผ่านช่องทางออนไลน์ของกรมสรรพากร</p>
+                        <a href="https://efiling.rd.go.th/rd-efiling-web/authen/DNT3" target="_blank" 
+                           class="text-blue-600 hover:underline">🔗 https://efiling.rd.go.th/rd-efiling-web/authen/DNT3</a>
+                        <p>ได้ตั้งแต่วันที่ 1 สิงหาคม 2568</p>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="font-semibold text-green-600">🌾 กรณีที่ 2</p>
+                        <p>การบริจาคเงินผ่านธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร เลขบัญชี 020247140265 (ทำบุญปล่อยปลา)</p>
+                        <p>ท่านสามารถตรวจสอบเงินบริจาคผ่านช่องทางออนไลน์ของกรมสรรพากร</p>
+                        <a href="https://efiling.rd.go.th/rd-efiling-web/authen/DNT3" target="_blank" 
+                           class="text-blue-600 hover:underline">🔗 https://efiling.rd.go.th/rd-efiling-web/authen/DNT3</a>
+                        <p>ได้ตั้งแต่วันที่ 1 กันยายน 2568</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="font-semibold text-blue-600">📄 กรณี ต้องการรับเอกสารอิเล็กทรอนิกส์</p>
+                        <p>สามารถติดต่อทางไลน์</p>
+                        <a href="https://page.line.me/239injxp" target="_blank" 
+                           class="text-blue-600 hover:underline">💬 https://page.line.me/239injxp</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-lg mt-12 fade-in">
+        <div class="container mx-auto px-6 py-4 text-center">
+            <p class="text-gray-600">👨‍💼 จัดทำโดย กลุ่มบริหารงานบุคคล โรงเรียนหางดงรัฐราษฎร์อุปถัมภ์</p>
+        </div>
+    </footer>
+
+    <script>
+        // Global variables
+        let allData = [];
+        let filteredData = [];
+
+        // API Configuration
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzGCZDzPrESOo4INmJ0pUpW2HIRp-j4Mhkk5wKZCIwb2GhqrWp6D5lPZXC9G1y7r-wRJg/exec';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchData();
+            setupSearchFilter();
+        });
+
+        // Fetch data from Google Apps Script
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allData = data.data;
+                    filteredData = [...allData];
+                    processData();
+                    hideLoading();
+                } else {
+                    throw new Error(data.error || 'Failed to fetch data');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    '<p class="text-red-600">❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        }
+
+        // Hide loading and show content
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        // Process and display data
+        function processData() {
+            displayTotalAmount();
+            displayChannelData();
+            displayStatusData();
+            displayDailyData();
+            displayDonorList();
+        }
+
+        // Display total donation amount
+        function displayTotalAmount() {
+            const total = allData.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+            document.getElementById('totalAmount').textContent = total.toLocaleString('th-TH');
+        }
+
+        // Display donation by channel
+        function displayChannelData() {
+            const channelData = {};
+            allData.forEach(item => {
+                const channel = item.channel || 'ไม่ระบุ';
+                channelData[channel] = (channelData[channel] || 0) + parseFloat(item.amount || 0);
+            });
+
+            // Create pie chart
+            const ctx = document.getElementById('channelChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(channelData),
+                    datasets: [{
+                        data: Object.values(channelData),
+                        backgroundColor: [
+                            '#ef4444', '#f87171', '#fca5a5', '#fecaca', '#fee2e2'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Create table
+            const tableBody = document.getElementById('channelTable');
+            tableBody.innerHTML = '';
+            Object.entries(channelData).forEach(([channel, amount]) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-2 border-b">${channel}</td>
+                    <td class="px-4 py-2 border-b text-right">${amount.toLocaleString('th-TH')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Display donation by status
+        function displayStatusData() {
+            const statusData = {};
+            allData.forEach(item => {
+                const status = item.status || 'ไม่ระบุ';
+                statusData[status] = (statusData[status] || 0) + parseFloat(item.amount || 0);
+            });
+
+            // Create pie chart
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusData),
+                    datasets: [{
+                        data: Object.values(statusData),
+                        backgroundColor: [
+                            '#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Create table
+            const tableBody = document.getElementById('statusTable');
+            tableBody.innerHTML = '';
+            Object.entries(statusData).forEach(([status, amount]) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-2 border-b">${status}</td>
+                    <td class="px-4 py-2 border-b text-right">${amount.toLocaleString('th-TH')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Display daily donation data
+        function displayDailyData() {
+            const dailyData = {};
+            allData.forEach(item => {
+                if (item.timestamp) {
+                    const date = new Date(item.timestamp).toLocaleDateString('th-TH');
+                    dailyData[date] = (dailyData[date] || 0) + parseFloat(item.amount || 0);
+                }
+            });
+
+            // Sort dates
+            const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b));
+            const sortedAmounts = sortedDates.map(date => dailyData[date]);
+
+            // Create bar chart
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'ยอดเงินบริจาค (บาท)',
+                        data: sortedAmounts,
+                        backgroundColor: '#ef4444',
+                        borderColor: '#dc2626',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('th-TH');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Create table
+            const tableBody = document.getElementById('dailyTable');
+            tableBody.innerHTML = '';
+            sortedDates.forEach(date => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-2 border-b">${date}</td>
+                    <td class="px-4 py-2 border-b text-right">${dailyData[date].toLocaleString('th-TH')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Display donor list
+        function displayDonorList() {
+            const tableBody = document.getElementById('donorTable');
+            tableBody.innerHTML = '';
+
+            // Sort by timestamp (latest first)
+            const sortedData = [...filteredData].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            sortedData.forEach(item => {
+                const fullName = `${item.prefix || ''} ${item.firstName || ''} ${item.lastName || ''}`.trim();
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-red-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3 border-b">${fullName || 'ไม่ระบุชื่อ'}</td>
+                    <td class="px-4 py-3 border-b text-right">${parseFloat(item.amount || 0).toLocaleString('th-TH')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Setup search filter
+        function setupSearchFilter() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                
+                if (searchTerm === '') {
+                    filteredData = [...allData];
+                } else {
+                    filteredData = allData.filter(item => {
+                        const fullName = `${item.prefix || ''} ${item.firstName || ''} ${item.lastName || ''}`.toLowerCase();
+                        return fullName.includes(searchTerm);
+                    });
+                }
+                
+                displayDonorList();
+            });
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9596e1d324b49bae',t:'MTc1MTU1MDk0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
