@@ -343,9 +343,10 @@
                     datasets: [{
                         data: Object.values(channelData),
                         backgroundColor: [
-                            '#ef4444', '#f87171', '#fca5a5', '#fecaca', '#fee2e2'
+                            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
                         ],
-                        borderWidth: 2,
+                        borderWidth: 3,
                         borderColor: '#ffffff'
                     }]
                 },
@@ -390,9 +391,10 @@
                     datasets: [{
                         data: Object.values(statusData),
                         backgroundColor: [
-                            '#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'
+                            '#FF9F43', '#10AC84', '#EE5A24', '#0ABDE3', '#FFC312',
+                            '#C44569', '#40739E', '#487EB0', '#8C7AE6', '#00D2D3'
                         ],
-                        borderWidth: 2,
+                        borderWidth: 3,
                         borderColor: '#ffffff'
                     }]
                 },
@@ -434,8 +436,19 @@
             const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b));
             const sortedAmounts = sortedDates.map(date => dailyData[date]);
 
-            // Create bar chart
+            // Create bar chart with gradient colors
             const ctx = document.getElementById('dailyChart').getContext('2d');
+            
+            // Create gradient colors for each bar
+            const backgroundColors = sortedAmounts.map((_, index) => {
+                const colors = [
+                    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+                    '#FF9F43', '#10AC84', '#EE5A24', '#0ABDE3', '#FFC312'
+                ];
+                return colors[index % colors.length];
+            });
+            
             new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -443,9 +456,9 @@
                     datasets: [{
                         label: 'ยอดเงินบริจาค (บาท)',
                         data: sortedAmounts,
-                        backgroundColor: '#ef4444',
-                        borderColor: '#dc2626',
-                        borderWidth: 1
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(color => color + 'CC'),
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -521,5 +534,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9596e1d324b49bae',t:'MTc1MTU1MDk0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9596fec5a5bd0886',t:'MTc1MTU1MjEyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
